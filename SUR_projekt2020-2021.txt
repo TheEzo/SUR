@@ -1,0 +1,100 @@
+Zadání projektu do SUR 2020/2021
+================================
+
+Bodové ohodnocení:   25 bodù
+
+Úkolem je natrénovat model pro identifikaci 31 rùzných osob z obrázku oblièeje
+a hlasové nahrávky. Trénovací vzory jsou k dispozici v archívu na adrese:
+
+https://www.fit.vutbr.cz/study/courses/SUR/public/projekt_2020-2021/SUR_projekt2020-2021.zip
+
+Tento archív obsahuje tøi adresáøe:
+
+train
+dev
+eval
+
+Adresáøe train a dev obsahují podadresáøe jejími¾ názvy jsou èísla
+od 1 do 31, která odpovídají jednotlivým tøídám - osobám k identifikaci.
+Ka¾dý podadresáø obsahuje trénovací vzory pro danou tøídu ve formátu PNG
+a WAV.
+
+Rozdìlení dat do adresáøù train a dev je mo¾né pou¾ít pro trénování a
+vyhodnocování úspì¹nosti vyvíjeného rozpoznávaèe, toto rozdìlení v¹ak není
+závazné (napø. pomocí technik jako je jackknifing lze efektivnì trénovat
+i testovat na v¹ech datech). Pøi pokusech o jiné rozdìlení dat mù¾e být
+u¾iteèné respektovat informace o tom, které trénovací vzory byly poøízený
+v rámci jednoho nahrávacího sezení. Jméno ka¾dého souboru je rozdìleno do
+poli pomocí podtr¾ítek (napø. f401_01_f16_i0_0.png), kde první pole (f401)
+je identifikátor osoby a druhé pole je èíslo nahrávacího sezení (01).
+
+Adresáø eval obsahuje obsahuje 363 obrázkù a 363 nahrávek, na kterých budou
+va¹e systémy vyhodnoceny. Je zaruèeno, ¾e soubory li¹ící se jen pøíponou
+(napø. eval_00001.png a eval_00001.wav) obsahují obrázek a nahrávku té¾e
+osoby. Va¹im úkolem bude automaticky rozpoznat identity osob v tìchto
+souborech va¹imi systémy (vìøím Vám ¾e nebudete podvádìt a dívat se
+na obrázky èí poslouchat nahrávky) a uploadovat soubory s výsledky do WISu.
+Soubor s výsledky bude ASCII soubor s 33-mi poli na øádku oddìlenými mezerou.
+Tyto pole budou obsahovat popoøadì následující údaje:
+
+ - jméno segmentu (jméno souboru bez pøípony .wav èi .png)
+ - tvrdé rozhodnutí o tøídì, kterým bude celé èíslo s hodnotou od 1 do 31.
+ - následujících 31 polí bude popoøadì obsahovat èíselná skóre odpovídající
+   logaritmickým pravdìpodobnostem jednotlivých tøíd 1 a¾ 31. 
+   (Pokud pou¾ijete klasifikátor jeho¾ výstup se nedá interpretovat
+   pravdìpodobnostnì, nastavte tato pole na hodnotu NaN.
+
+V jakém programovacím jazyce budete implementovat vá¹ detektor èi pomocí
+jakých nástrojù (spousta jich je volnì k dispozici na Internetu) budete data
+zpracovávat zále¾í jen na Vás. Odevzdat mù¾ete nìkolik souborù s výsledky 
+(napø. pro systémy rozhodujícím se pouze na základì øeèové nahrávky èi pouze
+obrázku). Maximálnì v¹ak bude zpracováno 5 takových souborù. Ka¾dá skupina
+musí odevzdat alespoò jeden systém (a výsledky) pro obrázky a jeden pro
+nahrávky. Pøípadnì mù¾ete odevzdat systém kombinující obì modality.
+
+Soubory s výsledky mù¾ete do pátku 14. kvìtna 23:59 uploadovat do
+WISu. Klíè se správnými odpovìïmi a srovnání va¹ich systémù bude
+zveøejnìno v následujících dnech.
+
+Na tomto projektu budete pracovat ve skupinách (1-3 lidí), do kterých
+se mù¾ete pøihlásit ve WISu. Jména souborù s výsledky pro jednotlivé
+systémy volte tak, aby se podle nich dalo poznat o jaký systém se
+jedná (napø. audio_GMM, image_linear). Ka¾dá skupina uploadne v¹echny
+soubory s výsledky zabalené do jednoho ZIP archívu se jménem
+login1_login2_login3.zip èi login1.zip, podle toho, kolik Vás bude
+ve skupinì. Kromì souborù s výsledky bude archív obsahovat také adresáø
+SRC/, do kterého ulo¾íte soubory se zdrojovými kódy implementovaných
+systémù. Dále bude archív obsahovat soubor dokumentace.pdf, který bude
+v èeském, slovenském nebo anglickém jazyce popisovat Va¹e øe¹ení a
+umo¾ní reprodukci Va¹í práce. Dùraz vìnujte tomu, jak jste systémy bìhem
+jejich vývoje vyhodnocovali, a které techniky èi rozhodnutí se pozitivnì
+projevily na úspì¹nosti systému. Tento dokument bude také popisovat jak
+získat Va¹e výsledky pomocí pøilo¾eného kódu. Bude tedy uvedeno jak Va¹e
+zdrojové kódy zkompilovat, jak va¹e systémy spustit, kde hledat
+výsledné soubory, jaké pøípadné externí nástroje je nutné instalovat a
+jak je pøesnì pou¾ít, atd. Oèekávaný rozsah tohoto dokumentu jsou
+3 strany A4. Do ZIP archívu prosím nepøikládejte evaluaèní data!
+
+Inspiraci pro va¹e systémy mù¾ete hledat v archívu demonstraèních pøíkladù
+pro pøedmìt SUR:
+
+https://www.fit.vutbr.cz/study/courses/SUR/public/prednasky/demos/
+
+Zvlá¹tì se podívejte na pøíklad detekce pohlaví z øeèi: demo_genderID.py
+U¾iteèné vám mohou být funkce pro naèítaní PNG souborù (png2fea) a extrakci
+MFCC pøíznakù z WAV souborù (wav16khz2mfcc).
+
+Hodnocení:
+- v¹e je odevzdáno a nìjakým zpùsobem pracuje:
+  - ètou se soubory
+  - produkuje se skóre
+  - jsou správnì implementovány a natrénovány nìjaké "rozumné" klasifikátory
+    pro obrázky a pro nahrávky a/nebo kombinaci obou modalit (klasifikátory
+    nemusí pracovat se 100% úspì¹ností, jsou to reálná data!)
+  - jsou odevzdány v¹echny po¾adované soubory v po¾adovaných formátech.
+  - v dokumentaci vysvìtlíte, co, jak a proè jste dìlali a co by se je¹tì dalo zlep¹it.
+  ... plný poèet 25 bodù.
+
+- nìco z vý¹e uvedeného není splnìno => ménì bodù.
+
+Poslední modifikace: 13. dubna 2021, Luká¹ Burget
