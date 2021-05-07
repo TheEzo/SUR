@@ -15,8 +15,6 @@ class DatasetLoader:
         else:
             print("Error: Unknown dataset type!")
             exit()
-        
-        self.shift_dataset_classes()
 
     def load_images_dataset(self, path, get_labels=True):
         images = []
@@ -43,10 +41,6 @@ class DatasetLoader:
         image = (image - 127.5) / 127.5 # Convert to <-1;1> range
         return image
 
-    def shift_dataset_classes(self):
-        self.y_train = self.y_train - 1 
-        self.y_val = self.y_val - 1 
-
     def check_image_dataset(self): # Check if dataset is correct
         assert self.x_train.shape[1:] == self.x_val.shape[1:] == self.x_test.shape[1:] # Same dimensions
         assert self.x_train.shape[0] == self.y_train.shape[0] # Same train sample count as labels
@@ -60,5 +54,9 @@ class DatasetLoader:
     @property
     def class_count(self):
         return len(np.unique(self.y_train))
+
+    @property
+    def train_count(self):
+        return self.x_train.shape[0]
 
     
