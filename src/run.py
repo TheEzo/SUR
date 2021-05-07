@@ -1,6 +1,7 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 from image_classifier import ImageClassifier
+from voice_classifier import VoiceClassifier
 from dataset import DatasetLoader
 import numpy as np
 import subprocess
@@ -16,6 +17,7 @@ def parse_args():
     arg_parser.add_argument("--train_path", dest="train_path", default="datasets/train", help="Select folder with train data.")    
     arg_parser.add_argument("--val_path", dest="val_path", default="datasets/dev", help="Select folder val data.")
     arg_parser.add_argument("--test_path", dest="test_path", default="datasets/eval", help="Select folder with test data.")
+    arg_parser.add_argument('--voice_classifier', action='store_true', help='Runs voice classifier.')
     return arg_parser.parse_args()
 
 def setup_gpu():
@@ -37,9 +39,9 @@ def write_eval(file_path, eval_list):
 if __name__ == "__main__":
     args = parse_args()
     setup_gpu()
-    image_dataset_loader = DatasetLoader(dataset_type="images", train_path=args.train_path, val_path=args.val_path, test_path=args.test_path)
 
     if args.run_all or args.image_classifier:
+        image_dataset_loader = DatasetLoader(dataset_type="images", train_path=args.train_path, val_path=args.val_path, test_path=args.test_path)
         model = ImageClassifier(dataset=image_dataset_loader)
         model.build_model()
 
@@ -49,5 +51,9 @@ if __name__ == "__main__":
             model.load_weights(path=args.image_classifier_snapshot)
             eval_list = model.evaluate()
             write_eval(args.image_classifier_file, eval_list)
+
+    if args.voice_classifier:
+        voice_dataset_loader = DatasetLoader(args.train_path, args.val_path, args.test_path, 'voice')
+        model = VoiceClassifier(dataset=voice_dataset_loader)
 
 
