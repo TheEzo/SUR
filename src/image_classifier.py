@@ -60,7 +60,7 @@ class ImageClassifier():
         # Create callbacks
         tensorboard_callback = TensorBoard(histogram_freq=1, write_images=True)
         modelcheckpoint_callback = ModelCheckpoint(snapshot_path, monitor="val_categorical_accuracy", save_best_only=True, save_weights_only=True)
-        earlystopping_callback = EarlyStopping(patience=50, monitor="val_categorical_accuracy", baseline=0.3)
+        earlystopping_callback = EarlyStopping(patience=30, monitor="val_categorical_accuracy", baseline=0.3)
 
         # Change <1;31> labels to <0;30>
         y_val = np.subtract(self.dataset.y_val, self.dataset.class_shift)
@@ -79,6 +79,10 @@ class ImageClassifier():
         self.classifier.save_weights(f"_{hist['categorical_accuracy']:0.4f}.".join(snapshot_path.split(".")))
     
     def evaluate(self):
+        y_val = np.subtract(self.dataset.y_val, self.dataset.class_shift)
+        hist = self.classifier.evaluate(self.dataset.x_val, to_categorical(y_val), self.batch_size, return_dict=True, verbose=0)
+        print(f"Image classifier accuracy: {hist['categorical_accuracy']:0.4f}")
+
         evaluated_test = []
         for image, name in zip(self.dataset.x_test, self.dataset.x_names):
             pred = self.classifier.predict(image[np.newaxis])

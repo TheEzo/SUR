@@ -9,7 +9,7 @@ import argparse
 def parse_args():
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--run_all", dest="run_all", action="store_true", help="Runs all models and saves their predictions to selected files.")
-    arg_parser.add_argument("--train", dest="train", action="store_true", help="Train the model before evaluation, otherwise just load previously trained snapshot.")
+    arg_parser.add_argument("--train", dest="train", action="store_true", help="Train the model, otherwise just load previously trained snapshot.")
     arg_parser.add_argument("--image_classifier_snapshot", dest="image_classifier_snapshot", default="snapshots/image_classifier.h5", help="Choose image classifier snapshot.")
     arg_parser.add_argument("--image_classifier", dest="image_classifier", action="store_true", help="Runs image classifier only and saves predictions to selected file.")
     arg_parser.add_argument("--image_classifier_file", dest="image_classifier_file", default="../image_classifier.txt")
@@ -45,9 +45,9 @@ if __name__ == "__main__":
 
         if args.train:
             model.train(snapshot_path=args.image_classifier_snapshot)
-
-        model.load_weights(path=args.image_classifier_snapshot)
-        eval_list = model.evaluate()
-        write_eval(args.image_classifier_file, eval_list)
+        else:
+            model.load_weights(path=args.image_classifier_snapshot)
+            eval_list = model.evaluate()
+            write_eval(args.image_classifier_file, eval_list)
 
 
