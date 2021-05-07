@@ -1,7 +1,7 @@
 from tensorflow.keras.models import Model
 from tensorflow.keras.losses import categorical_crossentropy, cosine_similarity
 from tensorflow.keras.optimizers import Adam, SGD
-from tensorflow.keras.layers import Input, AveragePooling2D, Conv2D, Dropout, BatchNormalization, Dense, Flatten
+from tensorflow.keras.layers import Input, AveragePooling2D, Conv2D, Dropout, LeakyReLU, BatchNormalization, Dense, Flatten
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
 from tensorflow.keras.regularizers import L1
 from tensorflow.keras.utils import to_categorical
@@ -23,29 +23,23 @@ class ImageClassifier():
         #self.classifier.summary()
         self.classifier.compile(optimizer=self.optimizer, loss=self.loss, metrics=["categorical_accuracy"])
 
-    def add_conv_block(self, inp, filters):
-        cnn = Conv2D(filters, kernel_size=3, padding="same", activation="relu", kernel_initializer="he_uniform")(inp)
-        #cnn = BatchNormalization()(cnn)
-        cnn = Conv2D(filters, kernel_size=3, padding="same", activation="relu", kernel_initializer="he_uniform")(cnn)
-        #cnn = BatchNormalization()(cnn)
+    def add_conv_block(self, inp, filters, dropout_rate):
+        cnn = Conv2D(filters, kernel_size=3, padding="same", kernel_initializer="he_uniform")(inp)
+        cnn = LeakyReLU()(cnn)
+        cnn = BatchNormalization()(cnn)
+        cnn = Conv2D(filters, kernel_size=3, padding="same", kernel_initializer="he_uniform")(cnn)
+        cnn = LeakyReLU()(cnn)
+        cnn = BatchNormalization()(cnn)
         cnn = AveragePooling2D()(cnn)
-        cnn = Dropout(0.3)(cnn)
-        return cnn
-
-    def add_dense_block(self, inp, neurons):
-        cnn = Dense(neurons, activation="relu", kernel_initializer="he_uniform")(inp)
-        #cnn = BatchNormalization()(cnn)
-        cnn = Dense(neurons, activation="relu", kernel_initializer="he_uniform")(cnn)
-        #cnn = BatchNormalization()(cnn)
-        #cnn = Dropout(0.3)(cnn)
+        cnn = Dropout(dropout_rate)(cnn)
         return cnn
 
     def build_classifier(self):
         inp = Input(shape=self.dataset.image_shape) # 80x80
 
-        cnn = self.add_conv_block(inp, 6) # 40x40
-        cnn = self.add_conv_block(cnn, 6) # 20x20
-        cnn = self.add_conv_block(cnn, 6) # 10x10
+        cnn = self.add_conv_block(inp, 6, 0.2) # 40x40
+        cnn = self.add_conv_block(cnn, 6, 0.35) # 20x20
+        cnn = self.add_conv_block(cnn, 6, 0.5) # 10x10
         #cnn = self.add_conv_block(cnn, 8) # 5x5
 
         cnn = Flatten()(cnn)
