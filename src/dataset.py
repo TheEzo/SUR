@@ -7,7 +7,7 @@ class DatasetLoader:
         if dataset_type == "images":
             self.x_train, self.y_train = self.load_images_dataset(train_path)
             self.x_val, self.y_val = self.load_images_dataset(val_path)
-            self.x_test = self.load_images_dataset(test_path, get_labels=False)
+            self.x_test, self.x_names = self.load_images_dataset(test_path, get_labels=False)
             self.check_image_dataset()
             self.class_shift = min(self.y_train) # We need to have labels starting from zero, not from one
         elif dataset_type == "speech":
@@ -18,23 +18,25 @@ class DatasetLoader:
 
     def load_images_dataset(self, path, get_labels=True):
         images = []
-        labels = []
 
         if get_labels:
+            labels = []
             for image_class in os.scandir(path):
                 for image in os.scandir(f"{path}/{image_class.name}/"):
                     if image.name.split(".")[-1] == "png": # Has .png ending
                         images.append(self.load_image(image.path))
                         labels.append(int(image_class.name)) # Class label
         else:
+            file_names = []
             for image in os.scandir(f"{path}/"):
                 if image.name.split(".")[-1] == "png": # Has .png ending
                     images.append(self.load_image(image.path))
+                    file_names.append(".".join(image.name.split(".")[:-1]))
 
         if get_labels:
             return np.array(images), np.array(labels)
         else:
-            return np.array(images)
+            return np.array(images), file_names
 
     def load_image(self, path):
         image = np.array(Image.open(path))

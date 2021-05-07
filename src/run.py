@@ -1,8 +1,9 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 from image_classifier import ImageClassifier
 from dataset import DatasetLoader
 import numpy as np
 import subprocess
-import os
 import argparse
 
 def parse_args():
@@ -11,7 +12,7 @@ def parse_args():
     arg_parser.add_argument("--train", dest="train", action="store_true", help="Train the model before evaluation, otherwise just load previously trained snapshot.")
     arg_parser.add_argument("--image_classifier_snapshot", dest="image_classifier_snapshot", default="snapshots/image_classifier.h5", help="Choose image classifier snapshot.")
     arg_parser.add_argument("--image_classifier", dest="image_classifier", action="store_true", help="Runs image classifier only and saves predictions to selected file.")
-    arg_parser.add_argument("--image_classifier_path", dest="image_classifier_file", default="../image_classifier.txt")
+    arg_parser.add_argument("--image_classifier_file", dest="image_classifier_file", default="../image_classifier.txt")
     arg_parser.add_argument("--train_path", dest="train_path", default="datasets/train", help="Select folder with train data.")    
     arg_parser.add_argument("--val_path", dest="val_path", default="datasets/dev", help="Select folder val data.")
     arg_parser.add_argument("--test_path", dest="test_path", default="datasets/eval", help="Select folder with test data.")
@@ -26,6 +27,13 @@ def setup_gpu():
         print("Found GPU: " + str(freeGpu))
     os.environ['CUDA_VISIBLE_DEVICES'] = freeGpu.decode().strip()
 
+def write_eval(file_path, eval_list):
+    with open(file_path, "w+") as f:
+        for row in eval_list:
+            for col in row:
+                f.write(f"{col} ")
+            f.write("\n")
+
 if __name__ == "__main__":
     args = parse_args()
     setup_gpu()
@@ -34,12 +42,12 @@ if __name__ == "__main__":
     if args.run_all or args.image_classifier:
         model = ImageClassifier(dataset=image_dataset_loader)
         model.build_model()
+
         if args.train:
-            model.train()
-        else:
-            model.load_weights(path=args.image_classifier_snapshot)
-        
-        eval = model.evaluate()
-        # TODO: Write to file - np.savetxt()
+            model.train(snapshot_path=args.image_classifier_snapshot)
+
+        model.load_weights(path=args.image_classifier_snapshot)
+        eval_list = model.evaluate()
+        write_eval(args.image_classifier_file, eval_list)
 
 
