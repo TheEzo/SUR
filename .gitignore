@@ -1,0 +1,5 @@
+src/datasets
+path.sh
+*__pycache__/
+logs/
+src/snapshots/image_classifier_*
