@@ -9,14 +9,14 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 
 class ImageClassifier():
-    def __init__(self, dataset, epochs=1000, batch_size=2):
+    def __init__(self, dataset, epochs=1000, batch_size=4):
         self.dataset = dataset
         
         self.epochs = epochs
         self.batch_size = batch_size
 
         self.loss = cosine_similarity
-        self.optimizer = Adam(lr=0.001)
+        self.optimizer = Adam(lr=0.0005)
 
     def build_model(self):
         self.classifier = self.build_classifier()
@@ -61,7 +61,7 @@ class ImageClassifier():
         y_train = np.subtract(self.dataset.y_train, self.dataset.class_shift)
 
         # Data augmentation
-        datagen = ImageDataGenerator(preprocessing_function=(lambda img: (img - 127.5) / 127.5), width_shift_range=0.05, height_shift_range=0.05, zoom_range=[0.95,1.05], brightness_range=[0.90,1.1])
+        datagen = ImageDataGenerator(preprocessing_function=(lambda img: (img - 127.5) / 127.5), width_shift_range=0.05, height_shift_range=0.05, rotation_range=5, zoom_range=[0.95,1.1], brightness_range=[0.85,1.15])
         train_gen = datagen.flow(self.dataset.x_train, to_categorical(y_train), batch_size=self.batch_size)
 
         # Train model
