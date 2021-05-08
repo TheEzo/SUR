@@ -1,7 +1,7 @@
 import numpy as np
 import os
 from PIL import Image
-from scipy.io import wavfile
+import librosa
 
 
 class DatasetLoader:
@@ -43,23 +43,23 @@ class DatasetLoader:
             return np.array(images), file_names
 
     def load_sound_dataset(self, path, get_labels=True):
-        sounds = []
+        mfcc = []
         labels = []
 
         if get_labels:
             for item in os.scandir(f'{path}/'):
                 for record in os.scandir(f'{path}/{item.name}/'):
                     if record.name.split('.')[-1] == 'wav':
-                        sounds.append(self.load_sound(record.path))
+                        mfcc.append(self.load_sound(record.path))
                         labels.append(int(item.name))
             labels = np.array(labels)
         else:
             for record in os.scandir(f'{path}/'):
                 if record.name.split('.')[-1] == 'wav':
-                    sounds.append((self.load_sound(record.path)))
+                    mfcc.append((self.load_sound(record.path)))
                     labels.append(".".join(record.name.split(".")[:-1]))
 
-        return sounds, labels
+        return mfcc, labels
 
     def load_image(self, path):
         image = np.array(Image.open(path))
@@ -67,12 +67,12 @@ class DatasetLoader:
         return image
 
     def load_sound(self, path):
-        class Data:
-            def __init__(self, samplerate, data):
-                self.samplerate = samplerate
-                self.data = data
-        s, d = wavfile.read(path)
-        return Data(s, d)
+        """Load sound to MFSS format"""
+        wave, sr = librosa.load(path, mono=True, sr=None)
+        # Downsampling
+        wave = wave[::3]
+        mfcc = librosa.feature.mfcc(wave, sr, hop_length=int(sr/100), n_fft=int(sr/40))
+        return mfcc
 
     def check_image_dataset(self): # Check if dataset is correct
         assert self.x_train.shape[1:] == self.x_val.shape[1:] == self.x_test.shape[1:] # Same dimensions
