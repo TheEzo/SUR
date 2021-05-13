@@ -1,7 +1,11 @@
-import numpy as np
 import os
-from PIL import Image
+import numpy as np
+import pandas as pd
 import librosa
+import wavio
+from PIL import Image
+from librosa.core import to_mono
+
 
 
 class DatasetLoader:
@@ -16,6 +20,7 @@ class DatasetLoader:
             self.x_train, self.y_train = self.load_sound_dataset(train_path)
             self.x_val, self.y_val = self.load_sound_dataset(val_path)
             self.x_test, self.x_names = self.load_sound_dataset(test_path, get_labels=False)
+            self.class_shift = min(self.y_train) # We need to have labels starting from zero, not from one
         else:
             print("Error: Unknown dataset type!")
             exit()
@@ -42,74 +47,89 @@ class DatasetLoader:
         else:
             return np.array(images), file_names
 
-    def load_sound_dataset(self, path, get_labels=True):
-        mfcc = []
-        labels = []
-
-        if get_labels:
-            for item in os.scandir(f'{path}/'):
-                for record in os.scandir(f'{path}/{item.name}/'):
-                    if record.name.split('.')[-1] == 'wav':
-                        mfcc.append(self.load_sound(record.path))
-                        labels.append(int(item.name))
-            labels = np.array(labels)
-        else:
-            for record in os.scandir(f'{path}/'):
-                if record.name.split('.')[-1] == 'wav':
-                    mfcc.append((self.load_sound(record.path)))
-                    labels.append(".".join(record.name.split(".")[:-1]))
-
-        return mfcc, labels
 
     def load_image(self, path):
         image = np.array(Image.open(path))
         image = (image - 127.5) / 127.5 # Convert to <-1;1> range
         return image
 
-    def load_sound(self, path):
-        """Load sound to MFSS format"""
-        wave, sr = librosa.load(path, mono=True, sr=None)
-        # Trim beginning and ending silence
-        wave2, index = librosa.effects.trim(wave)
-        # Downsampling
-        wave2 = wave2[::3]
-        mfcc = librosa.feature.mfcc(wave2, sr, hop_length=int(sr/100), n_fft=int(sr/40))
 
-        # import soundfile as sf
-        # p = '/home/tezzo/Desktop/sur/train/23/m424_02_r07_i0_0.wav'
-        # y, sr = librosa.load(p, mono=True, sr=None)
-        # # sf.write('/home/tezzo/Desktop/test.wav', samplerate=sr, data=)
-        #
-        # S_full, phase = librosa.magphase(librosa.stft(y))
-        # S_filter = librosa.decompose.nn_filter(S_full,
-        #                                        aggregate=np.median,
-        #                                        metric='cosine',
-        #                                        width=int(librosa.time_to_frames(2, sr=sr)))
-        # S_filter = np.minimum(S_full, S_filter)
-        # margin_i, margin_v = 2, 10
-        # power = 2
-        # mask_i = librosa.util.softmask(S_filter,
-        #                                margin_i * (S_full - S_filter),
-        #                                power=power)
-        # mask_v = librosa.util.softmask(S_full - S_filter,
-        #                                margin_v * S_filter,
-        #                                power=power)
-        # # Once we have the masks, simply multiply them with the input spectrum
-        # # to separate the components
-        # S_foreground = mask_v * S_full
-        # S_background = mask_i * S_full
-        #
-        # # apply mask
-        # yf = librosa.istft(S_foreground)
-        # sf.write('/home/tezzo/Desktop/test.wav', samplerate=sr, data=yf)
-        #
-        # # volume boost
-        # y_aug = yf.copy()
-        # dyn_change = np.random.uniform(low=1.5, high=3)
-        # y_aug = y_aug * dyn_change
-        # sf.write('/home/tezzo/Desktop/test2.wav', samplerate=sr, data=y_aug)
+    def load_sound_dataset(self, path, get_labels=True):
+        samples = []
+        labels = []
 
-        return mfcc
+        if get_labels:
+            for item in os.scandir(path):
+                for record in os.scandir(f'{path}/{item.name}/'):
+                    if record.name.split('.')[-1] == 'wav':
+                        
+                        print(record.path)
+                        print(item.name)
+                        self.load_sound( record.path, int(item.name), samples, labels )
+                        
+        else:
+            file_names = []
+            for record in os.scandir(f'{path}/'):
+                if record.name.split('.')[-1] == 'wav':
+                    
+                    item = ".".join(record.name.split(".")[:-1])
+                    self.load_sound( record.path, item, samples, labels )
+
+                    print(record.path)
+                    print(item)
+        
+        print("Prepared dataset:")
+        print(path)
+        print( np.array(samples).shape )
+        print( np.array(labels).shape )
+
+        if get_labels:
+            return np.array(samples), np.array(labels)
+        else:
+            return np.array(samples), labels
+
+
+
+    def load_sound(self, record, item, samples, labels):
+
+        threshold = 600
+        delta_time = 1.0
+
+        #Faster + all training done with this
+        rate, wav = self.cut_noise(record, threshold)
+
+        #Slow method, IDK why but does not learn sh*t
+        # rate, wav = self.tezzo_cut_noise(record, sr)
+
+        delta_sample = int( delta_time * rate )
+
+        # cleaned audio is less than a single sample
+        # pad with zeros to delta_sample size
+        if wav.shape[0] < delta_sample:
+            sample = np.zeros(shape=(delta_sample,), dtype=np.int16)
+            sample[:wav.shape[0]] = wav
+            
+            samples.append( sample )
+            labels.append( item )
+
+        # step through audio and save every delta_sample
+        # discard the ending audio if it is too short
+        else:
+            trunc = wav.shape[0] % delta_sample
+            for cnt, i in enumerate(np.arange(0, wav.shape[0]-trunc, delta_sample)):
+                start = int(i)
+                stop = int(i + delta_sample)
+                sample = wav[start:stop]
+
+                samples.append( sample )
+                labels.append( item )
+
+
+
+    def inner_class_count(self, data):
+        unique, counts = np.unique(data, return_counts=True)
+        return dict(zip(unique, counts))
+
 
     def check_image_dataset(self): # Check if dataset is correct
         assert self.x_train.shape[1:] == self.x_val.shape[1:] == self.x_test.shape[1:] # Same dimensions
@@ -128,3 +148,46 @@ class DatasetLoader:
     @property
     def train_count(self):
         return self.x_train.shape[0]
+
+
+
+    def cut_noise(self, path, threshold):
+
+        sound = wavio.read(path)
+        wav = sound.data.astype(np.float32, order='F')
+        rate = sound.rate
+
+        wav = to_mono(wav.reshape(-1))
+        wav = wav.astype(np.int16)
+
+        y = pd.Series(wav).apply(np.abs)
+        y_mean = y.rolling( window = int(rate/20), min_periods = 1, center = True ).max()
+        mask = [ True if mu > threshold else False for mu in y_mean ]
+
+        wav = wav[mask]
+
+        return rate, wav
+
+
+
+    def tezzo_cut_noise(self, path, sr):
+        margin_v = 10
+        power = 2
+        
+        y, sr = librosa.load(path, mono=True, sr=sr)
+
+        S_full, _ = librosa.magphase(librosa.stft(y))
+        S_filter = librosa.decompose.nn_filter(S_full, aggregate=np.median, metric='cosine', width=int(librosa.time_to_frames(2, sr=sr)))
+        S_filter = np.minimum(S_full, S_filter)
+
+        mask_v = librosa.util.softmask(S_full - S_filter, margin_v * S_filter, power = power)
+        
+        # Once we have the masks, simply multiply them with the input spectrum to separate the components
+        S_foreground = mask_v * S_full
+
+        # apply mask
+        yf = librosa.istft(S_foreground)
+
+        yf2, _ = librosa.effects.trim(yf)
+
+        return sr, yf2

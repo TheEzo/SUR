@@ -19,6 +19,8 @@ def parse_args():
     arg_parser.add_argument("--val_path", dest="val_path", default="datasets/dev", help="Select folder val data.")
     arg_parser.add_argument("--test_path", dest="test_path", default="datasets/eval", help="Select folder with test data.")
     arg_parser.add_argument('--voice_classifier', action='store_true', help='Runs voice classifier.')
+    arg_parser.add_argument("--voice_classifier_file", dest="voice_classifier_file", default="../voice_classifier.txt")
+    arg_parser.add_argument("--voice_classifier_snapshot", dest="voice_classifier_snapshot", default="snapshots/voice_classifier.h5", help="Choose voice classifier snapshot.")
     return arg_parser.parse_args()
 
 def setup_gpu():
@@ -29,6 +31,7 @@ def setup_gpu():
     else:
         print("Found GPU: " + str(freeGpu))
     os.environ['CUDA_VISIBLE_DEVICES'] = freeGpu.decode().strip()
+
 
 def write_eval(file_path, eval_list):
     with open(file_path, "w+") as f:
@@ -55,8 +58,16 @@ if __name__ == "__main__":
             eval_list = model.evaluate()
             write_eval(args.image_classifier_file, eval_list)
 
-    if args.voice_classifier:
-        voice_dataset_loader = DatasetLoader(args.train_path, args.val_path, args.test_path, 'voice')
-        model = VoiceClassifier(dataset=voice_dataset_loader)
 
+    if args.run_all or args.voice_classifier:
+        voice_dataset_loader = DatasetLoader(args.train_path, args.val_path, args.test_path, 'voice')
+        
+        model = VoiceClassifier(dataset=voice_dataset_loader)
+        model.build_model()
+
+        if args.train:
+            model.train()
+        else:
+            eval_list = model.evaluate(args.voice_classifier_snapshot)
+            write_eval(args.voice_classifier_file, eval_list)      
 
