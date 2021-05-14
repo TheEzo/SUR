@@ -161,7 +161,6 @@ class VoiceClassifier:
         for x,y in zip(wav_test, label_test):
             
             y_pred = model.predict( x[np.newaxis] )
-            y_pred = np.log( y_pred )
             
             #all batch-samples together
             if len(batches) < occurences[y]:
@@ -171,7 +170,9 @@ class VoiceClassifier:
                     
                     #Depends how we want to interpret results..
                     y_mean = np.prod( np.array(batches), axis=0)   
-                    #y_mean = np.mean(y_pred, axis=0)
+                    
+                    y_mean = y_mean.reshape(-1)
+                    y_mean = np.log( y_mean )
 
                     y_pred_cls = np.argmax(y_mean) + self.dataset.class_shift
                     y_dist_cls = [ y, y_pred_cls ] + y_mean.tolist() 
