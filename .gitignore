@@ -1,7 +1,7 @@
-src/datasets
+SRC/datasets
 path.sh
 *__pycache__/
 logs/
-src/snapshots/image_classifier_*
+SRC/snapshots/image_classifier_*
 .idea/
 .venv/
