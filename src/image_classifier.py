@@ -80,6 +80,7 @@ class ImageClassifier():
         evaluated_test = []
         for image, name in zip(self.dataset.x_test, self.dataset.x_names):
             pred = self.classifier.predict(image[np.newaxis])
+            pred = np.log(pred)
             pred_idx = np.argmax(pred) + self.dataset.class_shift
             evaluated_test.append([name, pred_idx] + pred[0].tolist())
         
